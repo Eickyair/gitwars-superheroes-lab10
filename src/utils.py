@@ -83,13 +83,62 @@ def convert_weight_to_kg(weight_list, verbose=False):
             return firstValidHandler
     raise ValueError(f"No valid weight format found: {weight_list}")
 
+def process_raw_hero(hero, verbose=False):
+    """
+    Procesa un elemento crudo de la respuesta de la API y retorna un dict con las variables relevantes.
+    """
+    try:
+        powerstats = hero.get('powerstats', {})
+        intelligence = powerstats.get('intelligence')
+        strength = powerstats.get('strength')
+        speed = powerstats.get('speed')
+        durability = powerstats.get('durability')
+        combat = powerstats.get('combat')
+        power = powerstats.get('power')
 
+        appearance = hero.get('appearance', {})
+        height_raw = appearance.get('height', [])
+        weight_raw = appearance.get('weight', [])
+
+        height_cm = convert_height_to_cm(height_raw)
+        weight_kg = convert_weight_to_kg(weight_raw)
+
+        variables = [intelligence, strength, speed, durability, combat, height_cm, weight_kg, power]
+        if all(v is not None for v in variables):
+            result = {
+                'intelligence': intelligence,
+                'strength': strength,
+                'speed': speed,
+                'durability': durability,
+                'combat': combat,
+                'height_cm': height_cm,
+                'weight_kg': weight_kg,
+                'power': power
+            }
+            result_df = pd.DataFrame([result])
+            for col in result_df.columns:
+                result_df[col] = pd.to_numeric(result_df[col], errors='coerce')
+            result_df = result_df[
+                (result_df['height_cm'] > 0) &
+                (result_df['weight_kg'] > 0)
+            ]
+            if verbose:
+                print(f"Procesado: {result}")
+            return result_df
+        else:
+            if verbose:
+                print(f"Datos faltantes o inválidos para {hero.get('name', 'unknown')}")
+            return None
+    except Exception as e:
+        if verbose:
+            print(f"Error procesando {hero.get('name', 'unknown')}: {e}")
+        return None
 def fetch_superhero_data(verbose=False):
     """
     Consume la SuperHero API, procesa las variables requeridas
     y genera data/data.csv con el dataset final.
     """
-    print("Fetching superhero data from API...")
+    print("Fetching superhero data from API...") if verbose else None
 
     # Fetch data from the API
     api_url = "https://akabab.github.io/superhero-api/api/all.json"
@@ -99,66 +148,25 @@ def fetch_superhero_data(verbose=False):
         response.raise_for_status()
         data = response.json()
     except Exception as e:
-        print(f"Error fetching data from API: {e}")
+        print(f"Error fetching data from API: {e}") if verbose else None
         return
 
     # Process the data
     processed_records = []
 
     for hero in data:
-        try:
-            powerstats = hero.get('powerstats', {})
-            intelligence = powerstats.get('intelligence')
-            strength = powerstats.get('strength')
-            speed = powerstats.get('speed')
-            durability = powerstats.get('durability')
-            combat = powerstats.get('combat')
-            power = powerstats.get('power')
-
-            # Extract appearance
-            appearance = hero.get('appearance', {})
-            height_raw = appearance.get('height', [])
-            weight_raw = appearance.get('weight', [])
-
-            # Convert height and weight
-            height_cm = convert_height_to_cm(height_raw)
-            weight_kg = convert_weight_to_kg(weight_raw)
-            # Check if all required values are present and valid
-            # Also check that height and weight are not 0 (invalid data)
-            variables = [intelligence, strength, speed, durability, combat, height_cm, weight_kg, power]
-            if all(v is not None for v in variables):
-                processed_records.append({
-                    'intelligence': intelligence,
-                    'strength': strength,
-                    'speed': speed,
-                    'durability': durability,
-                    'combat': combat,
-                    'height_cm': height_cm,
-                    'weight_kg': weight_kg,
-                    'power': power
-                })
-            else:
-                print("_"*40)
-                print(f"Skipping hero {hero.get('name', 'unknown')} due to missing or invalid data")
-                print(hero)
-
-
-        except Exception as e:
-            # Skip records with errors
-            print(f"Error processing hero {hero.get('name', 'unknown')}: {e}")
+        adapted_hero = process_raw_hero(hero, verbose=False)
+        if adapted_hero is None:
             continue
-    df = pd.DataFrame(processed_records)
+        processed_records.append(adapted_hero)
 
-    # Ensure all columns are numeric
-    for col in df.columns:
-        df[col] = pd.to_numeric(df[col], errors='coerce')
+    df = pd.concat(processed_records, ignore_index=True)
 
-    df = df[(df['height_cm'] > 0) & (df['weight_kg'] > 0)]
+
 
     # Ensure we have exactly 600 records through resampling
     if len(df) > 600:
         df = df.head(600)
-
         print(f"Truncated to 600 records") if verbose else None
     elif len(df) < 600:
         print(f"Only {len(df)} valid records available. Resampling to reach 600 records...") if verbose else None
