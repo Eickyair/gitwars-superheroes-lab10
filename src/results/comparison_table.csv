@@ -1,4 +1,0 @@
-Modelo,BO_Params,BO_Metric,RS_Params,RS_Metric,Mejora_BO
-SVM,"{'C': np.float64(100.0), 'gamma': np.float64(1.0)}",0.8832035595105673,"{'C': 100, 'gamma': 1}",0.8832035595105673,0.0
-Random Forest,"{'n_estimators': 100, 'max_depth': 8}",0.899972214504029,"{'n_estimators': 100, 'max_depth': 8}",0.899972214504029,0.0
-MLP,"{'hidden_layer_sizes': (32, 16), 'alpha': np.float64(0.01)}",0.8244024806633684,"{'hidden_layer_sizes': (32, 16), 'alpha': 0.001}",0.8331479421579533,-1.0496889030216034

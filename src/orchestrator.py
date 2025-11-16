@@ -25,7 +25,7 @@ def load_data():
     df = pd.read_csv(os.path.join(base, "../data/data.csv"))
 
     X = df.drop("power", axis=1).values
-    y = df["power"].values
+    y = df["power"].values 
 
     return X, y
 
@@ -89,7 +89,7 @@ def evaluate_mlp(params):
     model = MLPRegressor(
         hidden_layer_sizes=params["hidden_layer_sizes"],
         alpha=params["alpha"],
-        max_iter=2000,
+        max_iter=100,
         random_state=42
     )
     model.fit(X_train_scaled, y_train)
@@ -104,7 +104,7 @@ def evaluate_mlp(params):
 #  Entrenar y Guardar Modelo
 # ============================
 
-def train_and_save_model(model_name, best_params, output_path="best_model.pkl", verbose=False):
+def train_and_save_model(model_name, best_params, output_path="best_model.pkl"):
     X = X_global
     y = y_global
 
@@ -120,15 +120,15 @@ def train_and_save_model(model_name, best_params, output_path="best_model.pkl", 
     elif model_name == "rf":
         model = RandomForestRegressor(**best_params, random_state=42)
     elif model_name == "mlp":
-        model = MLPRegressor(**best_params, max_iter=2000, random_state=42)
+        model = MLPRegressor(**best_params, max_iter=400, random_state=42)
     else:
         raise ValueError(f"Modelo desconocido: {model_name}")
 
     model.fit(X_train_scaled, y_train)
 
-    joblib.dump({"model": model, "scaler": scaler}, output_path)
+    joblib.dump({"model": model, "scaler": scaler, 'params': best_params}, output_path)
 
-    print(f"✅ Modelo guardado correctamente en {output_path}") if verbose else None
+    print(f"✅ Modelo guardado correctamente en {output_path}")
 
     return model, scaler
 
@@ -140,22 +140,16 @@ if __name__ == "__main__":
     # Probar SVM (SVR)
     svm_params = {'C': 1.0, 'gamma': 0.01}
     svm_rmse = evaluate_svm(svm_params)
-    print("_"*40)
     print(f"\nSVR con {svm_params}: RMSE = {svm_rmse:.4f}")
 
     # Probar Random Forest Regressor
     rf_params = {'n_estimators': 100, 'max_depth': 6}
-    print("_"*40)
     rf_rmse = evaluate_rf(rf_params)
     print(f"RandomForestRegressor con {rf_params}: RMSE = {rf_rmse:.4f}")
 
     # Probar MLP Regressor
     mlp_params = {'hidden_layer_sizes': (32,), 'alpha': 0.001}
     mlp_rmse = evaluate_mlp(mlp_params)
-    print("_"*40)
     print(f"MLPRegressor con {mlp_params}: RMSE = {mlp_rmse:.4f}")
-    print("_"*40)
-
-
 
 
