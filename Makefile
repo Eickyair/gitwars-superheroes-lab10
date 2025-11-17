@@ -3,12 +3,12 @@
 # Proyecto: API Bomba en el IIMAS
 # =============================
 
-.PHONY: build run logs status stop clean package clean-package
+.PHONY: build run logs status stop clean package clean-package test
 
 IMAGE_NAME=bomba-iimas-api
 CONTAINER_NAME=bomba-iimas-container
 PORT=8000
-TEAM_NAME=Bomba_en_el_IIMAS
+TEAM_NAME=bomba_en_el_iimas
 
 # -----------------------------
 # Construir la imagen Docker
@@ -60,8 +60,8 @@ package: clean-package
 	tar --exclude='.git' \
 		--exclude='__pycache__' \
 		--exclude='*.tar.gz' \
-		-czvf $(TEAM_NAME).tar.gz .
+		-czvf ../$(TEAM_NAME).tar.gz .
 
 
-make test:
+test:
 	python ./src/tests/api_tests.py
