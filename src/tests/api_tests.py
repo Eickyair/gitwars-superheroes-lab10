@@ -1,7 +1,7 @@
 import pytest
 import requests
 
-API_URL = "http://localhost:8000"
+API_URL = "https://gitwars-superheroes-lab10.onrender.com"
 
 @pytest.fixture
 def sample_hero_data():
