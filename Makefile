@@ -63,3 +63,5 @@ package: clean-package
 		-czvf $(TEAM_NAME).tar.gz .
 
 
+make test:
+	python ./src/tests/api_tests.py
