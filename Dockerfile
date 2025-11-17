@@ -1,17 +1,13 @@
-FROM python:3.10-slim
-
-ENV PYTHONUNBUFFERED=1
+FROM python:3.11-slim
 
 WORKDIR /app
 
-COPY app/requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+COPY . .
 
-COPY app/ /app/
+# Install dependencies
+RUN pip install --no-cache-dir -r api/requirements.txt
+HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 \
+    CMD curl -f http://localhost:8000/health || exit 1
 
-COPY src/ /app/src/
 
-EXPOSE 8000
-
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
-
+CMD ["python","api/main.py"]

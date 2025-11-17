@@ -1,0 +1,8 @@
+# Ignorar todo
+*
+# Excepto la carpeta api
+!api/
+!api/**
+
+# Excepto src/utils.py
+!src/utils.py

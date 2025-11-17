@@ -21,8 +21,20 @@ scaler = bundle["scaler"]
 parameters = bundle["params"]
 
 
-class PredictionInput(BaseModel):
+class PredictionRawInput(BaseModel):
     data: Dict
+
+class Features(BaseModel):
+    intelligence: int
+    strength: int
+    speed: int
+    durability: int
+    combat: int
+    height_cm: float
+    weight_kg: float
+
+class PredictionInput(BaseModel):
+    features: Features
 
 app = FastAPI(
     title="API Bomba en el IIMAS",
@@ -44,8 +56,8 @@ async def info():
         "preprocessing": "StandardScaler normalization. Best model found via Bayesian Optimization: Gaussian Process with RBF kernel guided hyperparameter search using UCB acquisition function, minimizing RMSE across 3 model types (SVR, RF, MLP) over multiple iterations."
         }
 
-@app.post("/predict")
-async def make_predict(input: PredictionInput):
+@app.post("/predict_raw")
+async def make_predict(input: PredictionRawInput):
     try:
         data = input.data
         
@@ -77,6 +89,30 @@ async def make_predict(input: PredictionInput):
         return {
             "error": f"Attribute error: {str(e)}. Check the input data structure.",
             "power_prediction": None
+        }
+    except Exception as e:
+        return {
+            "error": f"Unexpected error processing prediction: {str(e)}. Contact administrator if problem persists.",
+            "power_prediction": None
+        }
+
+@app.post("/predict")
+async def make_predict_features(input: PredictionInput):
+    try:
+        features = input.features
+        x_features = np.array([
+            features.intelligence,
+            features.strength,
+            features.speed,
+            features.durability,
+            features.combat,
+            features.height_cm,
+            features.weight_kg
+        ])
+        superhero_scaled = scaler.transform([x_features])
+        prediction = model.predict(superhero_scaled)[0]
+        return {
+            "power_prediction": int(prediction)
         }
     except Exception as e:
         return {
