@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: gitwars-superheroes-api
+    env: docker
+    region: oregon
+    plan: free
+    dockerfilePath: ../Dockerfile
+    dockerContext: ..
+    healthCheckPath: /health
+    envVars:
+      - key: PORT
+        value: 8000
+      - key: PYTHON_VERSION
+        value: 3.11
+    numInstances: 1
