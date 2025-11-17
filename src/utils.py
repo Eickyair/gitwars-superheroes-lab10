@@ -83,9 +83,9 @@ def convert_weight_to_kg(weight_list, verbose=False):
             return firstValidHandler
     raise ValueError(f"No valid weight format found: {weight_list}")
 
-def process_raw_hero(hero, verbose=False):
+def process_basic_hero(hero, verbose=False):
     """
-    Procesa un elemento crudo de la respuesta de la API y retorna un dict con las variables relevantes.
+    Procesa las variables básicas de un héroe (sin power).
     """
     try:
         powerstats = hero.get('powerstats', {})
@@ -94,7 +94,6 @@ def process_raw_hero(hero, verbose=False):
         speed = powerstats.get('speed')
         durability = powerstats.get('durability')
         combat = powerstats.get('combat')
-        power = powerstats.get('power')
 
         appearance = hero.get('appearance', {})
         height_raw = appearance.get('height', [])
@@ -103,7 +102,7 @@ def process_raw_hero(hero, verbose=False):
         height_cm = convert_height_to_cm(height_raw)
         weight_kg = convert_weight_to_kg(weight_raw)
 
-        variables = [intelligence, strength, speed, durability, combat, height_cm, weight_kg, power]
+        variables = [intelligence, strength, speed, durability, combat, height_cm, weight_kg]
         if all(v is not None for v in variables):
             result = {
                 'intelligence': intelligence,
@@ -112,8 +111,7 @@ def process_raw_hero(hero, verbose=False):
                 'durability': durability,
                 'combat': combat,
                 'height_cm': height_cm,
-                'weight_kg': weight_kg,
-                'power': power
+                'weight_kg': weight_kg
             }
             result_df = pd.DataFrame([result])
             for col in result_df.columns:
@@ -123,15 +121,56 @@ def process_raw_hero(hero, verbose=False):
                 (result_df['weight_kg'] > 0)
             ]
             if verbose:
-                print(f"Procesado: {result}")
+                print(f"Procesado básico: {result}")
             return result_df
         else:
             if verbose:
-                print(f"Datos faltantes o inválidos para {hero.get('name', 'unknown')}")
+                print(f"Datos básicos faltantes para {hero.get('name', 'unknown')}")
             return None
     except Exception as e:
         if verbose:
-            print(f"Error procesando {hero.get('name', 'unknown')}: {e}")
+            print(f"Error procesando básico {hero.get('name', 'unknown')}: {e}")
+        return None
+
+
+def process_hero_power(hero, verbose=False):
+    """
+    Procesa la variable power de un héroe.
+    """
+    try:
+        powerstats = hero.get('powerstats', {})
+        power = powerstats.get('power')
+
+        if power is not None:
+            result = {'power': power}
+            result_df = pd.DataFrame([result])
+            result_df['power'] = pd.to_numeric(result_df['power'], errors='coerce')
+            if verbose:
+                print(f"Procesado power: {result}")
+            return result_df
+        else:
+            if verbose:
+                print(f"Power faltante para {hero.get('name', 'unknown')}")
+            return None
+    except Exception as e:
+        if verbose:
+            print(f"Error procesando power {hero.get('name', 'unknown')}: {e}")
+        return None
+
+
+def process_raw_hero(hero, verbose=False):
+    """
+    Procesa un elemento crudo de la respuesta de la API combinando las variables básicas y power.
+    """
+    basic_df = process_basic_hero(hero, verbose=verbose)
+    power_df = process_hero_power(hero, verbose=verbose)
+
+    if basic_df is not None and power_df is not None and not basic_df.empty and not power_df.empty:
+        result_df = pd.concat([basic_df.reset_index(drop=True), power_df.reset_index(drop=True)], axis=1)
+        return result_df
+    else:
+        if verbose:
+            print(f"No se pudo procesar completamente {hero.get('name', 'unknown')}")
         return None
 def fetch_superhero_data(verbose=False):
     """
